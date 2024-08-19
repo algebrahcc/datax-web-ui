@@ -49,8 +49,8 @@
       <!-- <el-table-column label="jdbc驱动类" width="200" align="center" :show-overflow-tooltip="true">
         <template slot-scope="scope">{{ scope.row.jdbcDriverClass ? scope.row.jdbcDriverClass:'-' }}</template>
       </el-table-column>-->
-      <el-table-column label="ZK地址" width="200" align="center" :show-overflow-tooltip="true">
-        <template slot-scope="scope">{{ scope.row.zkAdress ? scope.row.zkAdress:'-' }}</template>
+      <el-table-column label="文件目录地址" width="200" align="center" :show-overflow-tooltip="true">
+        <template slot-scope="scope">{{ scope.row.filesDir ? scope.row.filesDir:'-' }}</template>
       </el-table-column>
       <el-table-column label="数据库名" width="200" align="center" :show-overflow-tooltip="true">-->
         <template slot-scope="scope">{{ scope.row.databaseName ? scope.row.databaseName:'-' }}</template>-->
@@ -94,6 +94,9 @@
         </el-form-item>
         <el-form-item label="数据源分组" prop="datasourceGroup">
           <el-input v-model="temp.datasourceGroup" placeholder="数据源分组" style="width: 40%" />
+        </el-form-item>
+        <el-form-item v-if="excel" label="上传目录" prop="fileUpload">
+          <el-input v-model="temp.filesDir" placeholder="上传目录" style="width: 40%" />
         </el-form-item>
         <el-form-item v-if="jdbc" label="用户名">
           <el-input v-model="temp.jdbcUsername" placeholder="用户名" style="width: 40%" />
@@ -144,6 +147,22 @@
             style="width: 60%"
           />
         </el-form-item>
+        <el-form-item v-if="excel" label="上传">
+          <div class="upload-container">
+            <div class="upload-container">
+              <label class="custom-file-input">
+                <input type="file" multiple="multiple" @change="onFileSelected">
+                <span class="file-label">上传文件数据源</span>
+              </label>
+              <!-- <button class="upload-button" @click="uploadFiles">Upload</button> -->
+              <ul v-if="files.length" class="file-list">
+                <li v-for="(file, index) in files" :key="index" :class="{ uploading: file.status === 'uploading', uploaded: file.status === 'uploaded', failed: file.status === 'failed' }">
+                  {{ file.name }} - {{ file.status }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible = false">
@@ -170,6 +189,7 @@
 </template>
 
 <script>
+
 import * as datasourceApi from '@/api/datax-jdbcDatasource'
 import waves from '@/directive/waves' // waves directive
 import { parseTime } from '@/utils'
@@ -191,6 +211,7 @@ export default {
   },
   data() {
     return {
+      files: [],
       list: null,
       listLoading: true,
       total: 0,
@@ -228,7 +249,8 @@ export default {
         comments: '',
         datasource: '',
         zkAdress: '',
-        databaseName: ''
+        databaseName: '',
+        filesDir: ''
       },
       visible: true,
       dataSources: [
@@ -239,18 +261,71 @@ export default {
         { value: 'hive', label: 'hive' },
         { value: 'hbase', label: 'hbase' },
         { value: 'mongodb', label: 'mongodb' },
-        { value: 'clickhouse', label: 'clickhouse' }
+        { value: 'clickhouse', label: 'clickhouse' },
+        { value: 'excel', label: 'excel' }
       ],
       jdbc: true,
       hbase: false,
-      mongodb: false
+      mongodb: false,
+      excel: false
     }
   },
   created() {
     this.fetchData()
   },
   methods: {
+    isSpreadsheet(filename) {
+      const spreadsheetExtensions = ['.xls', '.xlsx', '.xlsm', '.xlsb', '.csv', '.tsv', '.ods', '.gnumeric', '.numbers', 'txt']
+      const fileExtension = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase()
+      return spreadsheetExtensions.includes(`.${fileExtension}`)
+    },
+    onFileSelected(event) {
+      const selectedFiles = event.target.files
+      for (let i = 0; i < selectedFiles.length; i++) {
+        this.files.push({
+          file: selectedFiles[i],
+          name: selectedFiles[i].name,
+          status: '上传中'
+        })
+      }
+    },
+    async uploadFiles() {
+      const formData = new FormData()
+      this.files.forEach(file => {
+        const isExcl = this.isSpreadsheet(file.name)
+        console.log(1 + isExcl)
+        if (isExcl) {
+          formData.append('files', file.file, file.name)
+          file.status = '完成'
+        } else if (isExcl) {
+          file.status = '文件格式有误'
+        }
+      })
+      formData.append('path', this.temp.filesDir)
+      datasourceApi.uploadFile(formData).then(response => {
+      }
+      )
+
+      // try {
+      //   const response = await axios.post('/api/upload', formData, {
+      //     headers: { 'Content-Type': 'multipart/form-data' },
+      //     onUploadProgress: progressEvent => {
+      //       console.log(`Uploaded ${progressEvent.loaded} of ${progressEvent.total}`);
+      //     }
+      //   })
+      //   this.files.forEach(file => {
+      //     file.status = 'uploaded'
+      //   })
+      //   console.log(response.data)
+      // } catch (error) {
+      //   console.error(error)
+      //   this.files.forEach(file => {
+      //     file.status = 'failed'
+      //   })
+      // }
+    },
     selectDataSource(datasource) {
+      this.excel = false
       if (datasource === 'mysql') {
         this.temp.jdbcUrl = 'jdbc:mysql://{host}:{port}/{database}'
         this.temp.jdbcDriverClass = 'com.mysql.jdbc.Driver'
@@ -307,7 +382,10 @@ export default {
     createData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          datasourceApi.created(this.temp).then(() => {
+          datasourceApi.created(this.temp).then(response => {
+            if (response) {
+              this.uploadFiles()
+            }
             this.fetchData()
             this.dialogFormVisible = false
             this.$notify({
@@ -316,6 +394,7 @@ export default {
               type: 'success',
               duration: 2000
             })
+            // this.uploadFiles()
           })
         }
       })
@@ -356,7 +435,10 @@ export default {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
-          datasourceApi.updated(tempData).then(() => {
+          datasourceApi.updated(tempData).then(response => {
+            if (response) {
+              this.uploadFiles()
+            }
             this.fetchData()
             this.dialogFormVisible = false
             this.$notify({
@@ -377,6 +459,10 @@ export default {
         this.jdbc = this.hbase = false
         this.mongodb = true
         this.temp.jdbcUrl = 'mongodb://[username:password@]host1[:port1][,...hostN[:portN]]][/[database][?options]]'
+      } else if (datasource === 'excel') {
+        this.excel = true
+        this.jdbc = this.mongodb = false
+        console.log(this.jdbc)
       } else {
         this.hbase = this.mongodb = false
         this.jdbc = true
@@ -420,3 +506,64 @@ export default {
   }
 }
 </script>
+<style scoped>
+.upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 50px;
+}
+
+.custom-file-input {
+  position: relative;
+  display: inline-block;
+}
+
+.custom-file-input input[type="file"] {
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  cursor: pointer;
+}
+
+.file-label {
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.upload-button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.file-list {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.file-list li {
+  padding: 5px;
+  border: 1px solid #ccc;
+  margin-bottom: 5px;
+}
+
+.uploading {
+  background-color: #e6f7ff;
+}
+
+.uploaded {
+  background-color: #d4edda;
+}
+
+.failed {
+  background-color: #f8d7da;
+}
+</style>
