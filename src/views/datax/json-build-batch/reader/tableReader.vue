@@ -38,24 +38,29 @@
         </el-checkbox-group>
       </el-form-item>
 
-      <el-form-item v-show="readerForm.tables" label="选择字段数据类型">
-        <el-form-item v-for="(item,index) in readerForm.tables" :key="index">
-          <el-checkbox
-            v-model="readerForm.tableCheckAll"
-            :indeterminate="readerForm.tableIsIndeterminate"
-            @change="lHandleCheckAllChange"
-          >全选</el-checkbox>
-          <div style="margin: 15px 0;" />
-          <el-checkbox-group v-model="readerForm.ltables" @change="lHandleCheckedChange">
-            <el-checkbox v-for="c in fromTablesList" :key="c" :label="c">{{ c }}</el-checkbox>
-          </el-checkbox-group>
+      <el-form-item v-show="readerForm.tables" label="字段数据类型">
+        <el-form-item v-for="(item,index) in csvHeaders" :key="item">
+          <el-form-item v-for="(el,i) in csvHeaders[index]" :label="el" :key="el">
+            <!--            <el-select-->
+            <!--              v-model="readerForm.columnsList[index][i].type"-->
+            <!--              filterable-->
+            <!--              allow-create-->
+            <!--              placeholder="请选择数据类型">-->
+            <!--              <el-option-->
+            <!--                v-for="c in typeList"-->
+            <!--                :key="c.value"-->
+            <!--                :label="c.label"-->
+            <!--                :value="c.value">-->
+            <!--              </el-option>-->
+            <!--            </el-select>-->
+            <select v-model="readerForm.columnsList[index][i].type" placeholder="请选择数据类型">
+              <!--              <option disabled value="">请选择数据类型</option>-->
+              <option v-for="c in typeList" :key="c.value" :value="c.value">{{ c.label }}</option>
+            </select>
+          </el-form-item>
+          <el-divider></el-divider>
         </el-form-item>
       </el-form-item>
-<!--      checkbox的值变化时,colums记得清空-->
-
-      <!--      <el-form-item label="切分字段：">-->
-      <!--        <el-input v-model="readerForm.splitPk" placeholder="切分主键" style="width: 13%" />-->
-      <!--      </el-form-item>-->
       <el-form-item v-show="dataSource==='postgresql' || dataSource==='oracle' ||dataSource==='sqlserver'"
                     label="数据库表名：">
         <el-checkbox
@@ -83,6 +88,32 @@ export default {
   name: 'TableReader',
   data() {
     return {
+      typeList: [
+        {
+          value: 'long',
+          label: 'long'
+        },
+        {
+          value: 'double',
+          label: 'double'
+        },
+        {
+          value: 'boolean',
+          label: 'boolean'
+        },
+        {
+          value: 'string',
+          label: 'string'
+        },
+        {
+          value: 'date',
+          label: 'date'
+        },
+        {
+          value: '其他',
+          label: '其他'
+        }
+      ],
       jdbcDsQuery: {
         current: 1,
         size: 200,
@@ -109,8 +140,11 @@ export default {
         splitPk: '',
         tableSchema: '',
         paths: [],
-        columns:[],
+        columns: [],
+        columnsList: [],
+        selectedTables: []
       },
+      csvHeaders: [],
       rules: {
         datasourceId: [{required: true, message: 'this is required', trigger: 'change'}],
         tableName: [{required: true, message: 'this is required', trigger: 'change'}]
@@ -127,12 +161,65 @@ export default {
     },
     'folderPath': function () {
       this.getFileList()
-    }
+    },
+    'readerForm.tables': function () {
+      this.getCsvHeaders()
+    },
   },
   created() {
     this.getJdbcDs()
   },
   methods: {
+
+    handleTypeChange(index, i) {
+      this.readerForm.columnsList[index][i].type = this.type[index][i]
+      console.log(this.readerForm.columnsList)
+    },
+
+    getCsvHeaders() {
+      this.csvHeaders = []
+      this.readerForm.tables.forEach((item, index) => {
+        axios.post('http://localhost:8080/api/getCsvHeader', {
+          path: item
+        })
+          .then(res => {
+            if (res.data.code === 0) {
+              //
+              this.csvHeaders.push(res.data.data)
+              // 表格源文件变化时，列名清空
+              this.readerForm.columnsList[index] = []
+              this.csvHeaders[index].forEach((item, i) => {
+                this.$set(this.readerForm.columnsList[index], i, {
+                  index: i.toString(),
+                  type: '',
+                  value: item
+                })
+              })
+            } else {
+              this.$notify({
+                title: 'Error',
+                message: '文件处理失败: ' + res.data.message,
+                type: 'error',
+                duration: 2000
+              });
+            }
+          })
+      })
+      console.log(this.readerForm.columnsList)
+    },
+
+    querySearch(queryString, cb) {
+      const typeList = this.typeList;
+      const results = queryString ? typeList.filter(this.createFilter(queryString)) : typeList;
+      // 调用 callback 返回建议列表的数据
+      cb(results);
+    },
+
+    tableHandleCheckAllChange(val) {
+      this.readerForm.selectedTables = val ? this.readerForm.tables : []
+      this.readerForm.isIndeterminate = false
+    },
+
     // 获取可用数据源
     getJdbcDs() {
       this.loading = true
@@ -152,7 +239,7 @@ export default {
         this.fileList = []
         this.fileList = res.data.data
         for (let i = 0; i < this.fileList.length; i++) {
-          this.fileList[i]=this.folderPath+'\\'+this.fileList[i]
+          this.fileList[i] = this.folderPath + '\\' + this.fileList[i]
         }
         console.log(res.data.data)
       })
@@ -217,7 +304,8 @@ export default {
     },
     rHandleCheckAllChange(val) {
       if (this.dataSource === 'txtfile') {
-        this.readerForm.paths = val ? this.fileList : []
+        this.readerForm.tables = val ? this.fileList : []
+        this.readerForm.paths = this.readerForm.tables
       } else {
         this.readerForm.tables = val ? this.rTbList : []
       }
