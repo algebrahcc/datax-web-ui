@@ -58,6 +58,9 @@
       <el-table-column label="ZK地址" width="200" align="center" :show-overflow-tooltip="true">
         <template slot-scope="scope">{{ scope.row.zkAdress ? scope.row.zkAdress : '-' }}</template>
       </el-table-column>
+      <el-table-column label="文件目录地址" width="200" align="center" :show-overflow-tooltip="true">
+        <template slot-scope="scope">{{ scope.row.filesDir ? scope.row.filesDir:'-' }}</template>
+      </el-table-column>
       <el-table-column label="表格文件地址" width="200" align="center" :show-overflow-tooltip="true">
         <template slot-scope="scope">{{ scope.row.fileAddress ? scope.row.fileAddress : '-' }}</template>
       </el-table-column>
@@ -96,26 +99,26 @@
             style="width: 200px"
             @change="selectDataSource(temp.datasource)"
           >
-            <el-option v-for="item in dataSources" :key="item.value" :label="item.label" :value="item.value"/>
+            <el-option v-for="item in dataSources" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="数据源名称" prop="datasourceName">
-          <el-input v-model="temp.datasourceName" placeholder="数据源名称" style="width: 40%"/>
+          <el-input v-model="temp.datasourceName" placeholder="数据源名称" style="width: 40%" />
         </el-form-item>
         <el-form-item label="数据源分组" prop="datasourceGroup">
-          <el-input v-model="temp.datasourceGroup" placeholder="数据源分组" style="width: 40%"/>
+          <el-input v-model="temp.datasourceGroup" placeholder="数据源分组" style="width: 40%" />
         </el-form-item>
         <el-form-item v-if="jdbc" label="用户名">
-          <el-input v-model="temp.jdbcUsername" placeholder="用户名" style="width: 40%"/>
+          <el-input v-model="temp.jdbcUsername" placeholder="用户名" style="width: 40%" />
         </el-form-item>
         <el-form-item v-if="visible" v-show="jdbc" label="密码">
           <el-input v-model="temp.jdbcPassword" type="password" placeholder="密码" style="width: 40%">
-            <i slot="suffix" title="显示密码" style="cursor:pointer" class="el-icon-view" @click="changePass('show')"/>
+            <i slot="suffix" title="显示密码" style="cursor:pointer" class="el-icon-view" @click="changePass('show')" />
           </el-input>
         </el-form-item>
         <el-form-item v-show="jdbc" v-else label="密码">
           <el-input v-model="temp.jdbcPassword" type="text" placeholder="密码" style="width: 40%">
-            <i slot="suffix" title="隐藏密码" style="cursor:pointer" class="el-icon-check" @click="changePass('hide')"/>
+            <i slot="suffix" title="隐藏密码" style="cursor:pointer" class="el-icon-check" @click="changePass('hide')" />
           </el-input>
         </el-form-item>
         <el-form-item v-if="jdbc" label="jdbc url" prop="jdbcUrl">
@@ -137,16 +140,16 @@
           />
         </el-form-item>
         <el-form-item v-if="jdbc" label="jdbc驱动类" prop="jdbcDriverClass">
-          <el-input v-model="temp.jdbcDriverClass" placeholder="jdbc驱动类" style="width: 60%"/>
+          <el-input v-model="temp.jdbcDriverClass" placeholder="jdbc驱动类" style="width: 60%" />
         </el-form-item>
         <el-form-item v-if="hbase" label="ZK地址" prop="zkAdress">
-          <el-input v-model="temp.zkAdress" placeholder="127.0.0.1:2181" style="width: 60%"/>
+          <el-input v-model="temp.zkAdress" placeholder="127.0.0.1:2181" style="width: 60%" />
         </el-form-item>
         <el-form-item v-if="mongodb" label="数据库名称" prop="databaseName">
-          <el-input v-model="temp.databaseName" placeholder="数据库名称" style="width: 60%"/>
+          <el-input v-model="temp.databaseName" placeholder="数据库名称" style="width: 60%" />
         </el-form-item>
         <el-form-item v-if="txtfile" label="上传文件夹" prop="fileAddress">
-          <input @change="handleFileChange" type="file" multiple directory mozdirectory webkitdirectory/>
+          <input type="file" multiple directory mozdirectory webkitdirectory @change="handleFileChange">
           <!--          <el-upload-->
           <!--            ref="uploadList"-->
           <!--            class="upload-demo"-->
@@ -163,7 +166,26 @@
           <!--          </el-upload>-->
         </el-form-item>
         <el-form-item v-if="txtfile" label="文件夹地址">
-          <el-input :disabled="true" ref="fileAddress" style="width: 600px;" :value="this.temp.fileAddress"></el-input>
+          <el-input ref="fileAddress" :disabled="true" style="width: 600px;" :value="this.temp.fileAddress" />
+        </el-form-item>
+        <el-form-item v-if="excel" label="测试" prop="fileUpload">
+          <el-input v-model="temp.filesDir" placeholder="上传目录" style="width: 40%" />
+        </el-form-item>
+        <el-form-item v-if="excel" label="上传">
+          <div class="upload-container">
+            <div class="upload-container">
+              <label class="custom-file-input">
+                <input type="file" multiple="multiple" @change="onFileSelected">
+                <span class="file-label">上传文件数据源</span>
+              </label>
+              <!-- <button class="upload-button" @click="uploadFiles">Upload</button> -->
+              <ul v-if="files.length" class="file-list">
+                <li v-for="(file, index) in files" :key="index" :class="{ uploading: file.status === 'uploading', uploaded: file.status === 'uploaded', failed: file.status === 'failed' }">
+                  {{ file.name }} - {{ file.status }}
+                </li>
+              </ul>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="注释">
           <el-input
@@ -189,8 +211,8 @@
     </el-dialog>
     <el-dialog :visible.sync="dialogPluginVisible" title="Reading statistics">
       <el-table :data="pluginData" border fit highlight-current-row style="width: 100%">
-        <el-table-column prop="key" label="Channel"/>
-        <el-table-column prop="pv" label="Pv"/>
+        <el-table-column prop="key" label="Channel" />
+        <el-table-column prop="pv" label="Pv" />
       </el-table>
       <span slot="footer" class="dialog-footer">
         <el-button type="primary" @click="dialogPvVisible = false">Confirm</el-button>
@@ -202,14 +224,14 @@
 <script>
 import * as datasourceApi from '@/api/datax-jdbcDatasource'
 import waves from '@/directive/waves' // waves directive
-import {parseTime} from '@/utils'
+import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination'
-import axios from "axios";
+import axios from 'axios'
 
 export default {
   name: 'JdbcDatasource',
-  components: {Pagination},
-  directives: {waves},
+  components: { Pagination },
+  directives: { waves },
   filters: {
     statusFilter(status) {
       const statusMap = {
@@ -239,14 +261,14 @@ export default {
         create: 'Create'
       },
       rules: {
-        datasourceName: [{required: true, message: 'this is required', trigger: 'blur'}],
-        jdbcUsername: [{required: true, message: 'this is required', trigger: 'blur'}],
-        jdbcPassword: [{required: true, message: 'this is required', trigger: 'blur'}],
-        jdbcUrl: [{required: true, message: 'this is required', trigger: 'blur'}],
-        jdbcDriverClass: [{required: true, message: 'this is required', trigger: 'blur'}],
-        datasource: [{required: true, message: 'this is required', trigger: 'change'}],
-        zkAdress: [{required: true, message: 'this is required', trigger: 'blur'}],
-        databaseName: [{required: true, message: 'this is required', trigger: 'blur'}]
+        datasourceName: [{ required: true, message: 'this is required', trigger: 'blur' }],
+        jdbcUsername: [{ required: true, message: 'this is required', trigger: 'blur' }],
+        jdbcPassword: [{ required: true, message: 'this is required', trigger: 'blur' }],
+        jdbcUrl: [{ required: true, message: 'this is required', trigger: 'blur' }],
+        jdbcDriverClass: [{ required: true, message: 'this is required', trigger: 'blur' }],
+        datasource: [{ required: true, message: 'this is required', trigger: 'change' }],
+        zkAdress: [{ required: true, message: 'this is required', trigger: 'blur' }],
+        databaseName: [{ required: true, message: 'this is required', trigger: 'blur' }]
       },
       temp: {
         id: undefined,
@@ -260,24 +282,29 @@ export default {
         datasource: '',
         zkAdress: '',
         databaseName: '',
-        fileAddress: ''
+        fileAddress: '',
+        filesDir: '',
+        fileUpload: ''
       },
       visible: true,
       dataSources: [
-        {value: 'mysql', label: 'mysql'},
-        {value: 'oracle', label: 'oracle'},
-        {value: 'postgresql', label: 'postgresql'},
-        {value: 'sqlserver', label: 'sqlserver'},
-        {value: 'hive', label: 'hive'},
-        {value: 'hbase', label: 'hbase'},
-        {value: 'mongodb', label: 'mongodb'},
-        {value: 'clickhouse', label: 'clickhouse'},
-        {value: 'txtfile', label: 'txtfile'}
+        { value: 'mysql', label: 'mysql' },
+        { value: 'oracle', label: 'oracle' },
+        { value: 'postgresql', label: 'postgresql' },
+        { value: 'sqlserver', label: 'sqlserver' },
+        { value: 'hive', label: 'hive' },
+        { value: 'hbase', label: 'hbase' },
+        { value: 'mongodb', label: 'mongodb' },
+        { value: 'clickhouse', label: 'clickhouse' },
+        { value: 'txtfile', label: 'txtfile' },
+        { value: 'excel', label: 'excel' }
       ],
       jdbc: true,
       hbase: false,
       mongodb: false,
-      txtfile: false
+      txtfile: false,
+      excel: false,
+      files: []
     }
   },
   created() {
@@ -287,13 +314,45 @@ export default {
   //   this.$refs.uploadList[0].$children[0].$refs.input.webkitdirectory = true;
   // },
   methods: {
+    isSpreadsheet(filename) {
+      const spreadsheetExtensions = ['.xls', '.xlsx', '.xlsm', '.xlsb', '.csv', '.tsv', '.ods', '.gnumeric', '.numbers', 'txt']
+      const fileExtension = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase()
+      return spreadsheetExtensions.includes(`.${fileExtension}`)
+    },
+    onFileSelected(event) {
+      const selectedFiles = event.target.files
+      for (let i = 0; i < selectedFiles.length; i++) {
+        this.files.push({
+          file: selectedFiles[i],
+          name: selectedFiles[i].name,
+          status: '上传中'
+        })
+      }
+    },
+    async uploadFiles() {
+      const formData = new FormData()
+      this.files.forEach(file => {
+        const isExcl = this.isSpreadsheet(file.name)
+        console.log(1 + isExcl)
+        if (isExcl) {
+          formData.append('files', file.file, file.name)
+          file.status = '完成'
+        } else if (isExcl) {
+          file.status = '文件格式有误'
+        }
+      })
+      formData.append('path', this.temp.filesDir)
+      datasourceApi.uploadFile(formData).then(response => {
+      }
+      )
+    },
     handleFileChange(event) {
-      const files = event.target.files;
-      const formData = new FormData();
+      const files = event.target.files
+      const formData = new FormData()
 
-      for (let file of files) {
+      for (const file of files) {
         // 包括文件路径，保持文件夹结构
-        formData.append('files', file, file.webkitRelativePath);
+        formData.append('files', file, file.webkitRelativePath)
       }
 
       // 发送请求到后端
@@ -303,7 +362,7 @@ export default {
         }
       }).then(res => {
         console.log(res.data.data)
-        this.$set(this.temp,'fileAddress',res.data.data)
+        this.$set(this.temp, 'fileAddress', res.data.data)
       })
     },
     // handleUploadSuccess(response) {
@@ -320,6 +379,7 @@ export default {
     // },
 
     selectDataSource(datasource) {
+      this.excel = false
       if (datasource === 'mysql') {
         this.temp.jdbcUrl = 'jdbc:mysql://{host}:{port}/{database}'
         this.temp.jdbcDriverClass = 'com.mysql.jdbc.Driver'
@@ -338,7 +398,7 @@ export default {
       } else if (datasource === 'hive') {
         this.temp.jdbcUrl = 'jdbc:hive2://{host}:{port}/{database}'
         this.temp.jdbcDriverClass = 'org.apache.hive.jdbc.HiveDriver'
-        this.hbase = this.mongodb = this.txtfile = false
+        this.hbase = this.mongodb = this.txtfile = this.excel = false
         this.jdbc = true
       }
       this.getShowStrategy(datasource)
@@ -346,8 +406,8 @@ export default {
     fetchData() {
       this.listLoading = true
       datasourceApi.list(this.listQuery).then(response => {
-        const {records} = response
-        const {total} = response
+        const { records } = response
+        const { total } = response
         this.total = total
         this.list = records
         this.listLoading = false
@@ -376,7 +436,10 @@ export default {
     createData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          datasourceApi.created(this.temp).then(() => {
+          datasourceApi.created(this.temp).then(response => {
+            if (response) {
+              this.uploadFiles()
+            }
             this.fetchData()
             this.dialogFormVisible = false
             this.$notify({
@@ -425,7 +488,10 @@ export default {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
-          datasourceApi.updated(tempData).then(() => {
+          datasourceApi.updated(tempData).then(response => {
+            if (response) {
+              this.uploadFiles()
+            }
             this.fetchData()
             this.dialogFormVisible = false
             this.$notify({
@@ -440,24 +506,27 @@ export default {
     },
     getShowStrategy(datasource) {
       if (datasource === 'hbase') {
-        this.jdbc = this.mongodb = this.txtfile = false
+        this.jdbc = this.mongodb = this.txtfile = this.excel = false
         this.hbase = true
       } else if (datasource === 'mongodb') {
-        this.jdbc = this.hbase = this.txtfile = false
+        this.jdbc = this.hbase = this.txtfile = this.excel = false
         this.mongodb = true
         this.temp.jdbcUrl = 'mongodb://[username:password@]host1[:port1][,...hostN[:portN]]][/[database][?options]]'
       } else if (datasource === 'txtfile') {
-        this.jdbc = this.mongodb = this.hbase = false
+        this.jdbc = this.mongodb = this.hbase = this.excel = false
         this.txtfile = true
+      } else if (datasource === 'excel') {
+        this.excel = true
+        this.jdbc = this.mongodb = this.hbase = this.txtfile = false
       } else {
-        this.hbase = this.mongodb = this.txtfile = false
+        this.hbase = this.mongodb = this.txtfile = this.excel = false
         this.jdbc = true
       }
     },
     handleDelete(row) {
       console.log('删除')
 
-      datasourceApi.deleted({id: row.id}).then(response => {
+      datasourceApi.deleted({ id: row.id }).then(response => {
         this.fetchData()
         this.$notify({
           title: 'Success',
@@ -489,3 +558,56 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 50px;
+}
+.custom-file-input {
+  position: relative;
+  display: inline-block;
+}
+.custom-file-input input[type="file"] {
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  cursor: pointer;
+}
+.file-label {
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.upload-button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.file-list {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 20px;
+}
+.file-list li {
+  padding: 5px;
+  border: 1px solid #ccc;
+  margin-bottom: 5px;
+}
+.uploading {
+  background-color: #e6f7ff;
+}
+.uploaded {
+  background-color: #d4edda;
+}
+.failed {
+  background-color: #f8d7da;
+}
+</style>

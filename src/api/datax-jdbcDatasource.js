@@ -56,3 +56,13 @@ export function getDataSourceList(params) {
     params
   })
 }
+
+export function uploadFile(data) {
+  console.log(data)
+  return request({
+    url: '/api/jobJdbcDatasource/uploadFile',
+    headers: { 'Content-Type': 'multipart/form-data' },
+    method: 'post',
+    data
+  })
+}
