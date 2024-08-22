@@ -2,6 +2,9 @@ import Vue from 'vue'
 
 import Cookies from 'js-cookie'
 
+import iView from 'iview';
+import 'iview/dist/styles/iview.css';
+
 import 'normalize.css/normalize.css' // a modern alternative to CSS resets
 
 import Element from 'element-ui'
@@ -28,7 +31,8 @@ Vue.prototype.$echarts = echarts
  * Currently MockJs will be used in the production environment,
  * please remove it before going online! ! !
  */
-import { mockXHR } from '../mock'
+import {mockXHR} from '../mock'
+
 if (process.env.NODE_ENV === 'production') {
   mockXHR()
 }
@@ -36,6 +40,8 @@ if (process.env.NODE_ENV === 'production') {
 Vue.use(Element, {
   size: Cookies.get('size') || 'medium' // set element-ui default size
 })
+
+Vue.use(iView);
 
 // register global utility filters
 Object.keys(filters).forEach(key => {

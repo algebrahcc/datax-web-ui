@@ -1,6 +1,7 @@
 'use strict'
 const path = require('path')
 const defaultSettings = require('./src/settings.js')
+const autoImportPlugin = require('@opentiny/unplugin-tiny-vue')
 
 function resolve(dir) {
   return path.join(__dirname, dir)

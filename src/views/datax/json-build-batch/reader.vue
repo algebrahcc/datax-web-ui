@@ -21,6 +21,9 @@ export default {
     showDataSource(data) {
       this.dataSource = data
       this.getData()
+    },
+    getColumnsList() {
+      return this.$refs.tablereader.getColumnsList()
     }
   }
 }

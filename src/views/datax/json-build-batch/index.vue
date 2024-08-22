@@ -176,11 +176,12 @@ export default {
       const readerData = this.$refs.reader.getData()
       const writeData = this.$refs.writer.getData()
       const readerTables = this.$refs.mapper.getLTables()
-      const readerColumnsList = this.$refs.mapper.getColumnsList()
+      //const readerColumnsList = this.$refs.mapper.getColumnsList()
+      const readerColumnsList = this.$refs.reader.getColumnsList()
 
       for (let i = 0; i < readerColumnsList.length; i++) {
         for (let j = 0; j < readerColumnsList[i].length; j++) {
-          readerColumnsList[i][j]=JSON.stringify(readerColumnsList[i][j])
+          readerColumnsList[i][j] = JSON.stringify(readerColumnsList[i][j])
         }
       }
 
