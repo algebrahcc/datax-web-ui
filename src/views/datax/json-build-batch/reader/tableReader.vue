@@ -1,3 +1,16 @@
+<style scoped>
+.typeInput {
+  font-size: 14px;
+  padding-left: 15px;
+  padding-right: 15px;
+  border-color: #C0C4CC;
+  border-radius: 4px;
+  line-height: 36px;
+  border-width: 1.25px;
+}
+
+</style>
+
 <template>
   <div class="app-container">
     <el-form label-position="right" label-width="120px" :model="readerForm" :rules="rules">
@@ -37,26 +50,15 @@
           <el-checkbox v-for="c in fileList" :key="c" :label="c">{{ c }}</el-checkbox>
         </el-checkbox-group>
       </el-form-item>
-
       <el-form-item v-show="readerForm.tables" label="字段数据类型">
-        <el-form-item v-for="(item,index) in csvHeaders" :key="item">
-          <el-form-item v-for="(el,i) in csvHeaders[index]" :label="el" :key="el">
-            <!--            <el-select-->
-            <!--              v-model="readerForm.columnsList[index][i].type"-->
-            <!--              filterable-->
-            <!--              allow-create-->
-            <!--              placeholder="请选择数据类型">-->
-            <!--              <el-option-->
-            <!--                v-for="c in typeList"-->
-            <!--                :key="c.value"-->
-            <!--                :label="c.label"-->
-            <!--                :value="c.value">-->
-            <!--              </el-option>-->
-            <!--            </el-select>-->
-            <select v-model="readerForm.columnsList[index][i].type" placeholder="请选择数据类型">
-              <!--              <option disabled value="">请选择数据类型</option>-->
-              <option v-for="c in typeList" :key="c.value" :value="c.value">{{ c.label }}</option>
-            </select>
+        <el-form-item v-for="(item,index) in csvHeaders" :key="index">
+          <span>{{ readerForm.tables[index] }}</span>
+          <el-form-item v-for="(el,i) in csvHeaders[index]" :label="el" :key="i" style="margin-bottom: 5px;">
+            <AutoComplete v-model="readerForm.columnsList[index][i].type"
+                          :data="['long','double','boolean','string','date']"
+                          :filter-method="filterMethod"
+                          style="width: 150px;">
+            </AutoComplete>
           </el-form-item>
           <el-divider></el-divider>
         </el-form-item>
@@ -88,32 +90,6 @@ export default {
   name: 'TableReader',
   data() {
     return {
-      typeList: [
-        {
-          value: 'long',
-          label: 'long'
-        },
-        {
-          value: 'double',
-          label: 'double'
-        },
-        {
-          value: 'boolean',
-          label: 'boolean'
-        },
-        {
-          value: 'string',
-          label: 'string'
-        },
-        {
-          value: 'date',
-          label: 'date'
-        },
-        {
-          value: '其他',
-          label: '其他'
-        }
-      ],
       jdbcDsQuery: {
         current: 1,
         size: 200,
@@ -170,6 +146,9 @@ export default {
     this.getJdbcDs()
   },
   methods: {
+    filterMethod(value, option) {
+      return option.toUpperCase().indexOf(value.toUpperCase()) !== -1;
+    },
 
     handleTypeChange(index, i) {
       this.readerForm.columnsList[index][i].type = this.type[index][i]
@@ -321,6 +300,9 @@ export default {
         this.readerForm.datasourceId = Bus.dataSourceId
       }
       return this.readerForm
+    },
+    getColumnsList() {
+      return this.readerForm.columnsList
     }
   }
 }
