@@ -43,6 +43,7 @@
 import {list as jdbcDsList} from '@/api/datax-jdbcDatasource'
 import Bus from '../busReader'
 import axios from "axios";
+import * as jdbcDatasource from "@/api/datax-jdbcDatasource";
 
 export default {
   name: 'TxtfileReader',
@@ -112,51 +113,26 @@ export default {
     },
 
     fileChange() {
-      axios.post('http://localhost:8080/api/getCsvHeader', {
-        path: this.readerForm.path
-      })
-        .then(res => {
-          if (res.data.code === 0) {
-            this.csvHeader = []
-            this.csvHeader = res.data.data
-            // 表格源文件变化时，列名清空
-            this.readerForm.columns = []
-            this.csvHeader.forEach((item, i) => {
-              this.readerForm.columns.push({
-                index: i.toString(),
-                type: 'string',
-                value: item
-              })
-            })
-          } else {
-            this.$notify({
-              title: 'Error',
-              message: '文件处理失败: ' + res.data.message,
-              type: 'error',
-              duration: 2000
-            });
-          }
-        }).catch(err => {
-        console.error(err)
-        this.$notify({
-          title: 'Error',
-          message: '文件处理失败',
-          type: 'error',
-          duration: 2000
-        });
+      jdbcDatasource.getCsvHeader({path: this.readerForm.path}).then(res => {
+        this.csvHeader = []
+        this.csvHeader = res
+        // 表格源文件变化时，列名清空
+        this.readerForm.columns = []
+        this.csvHeader.forEach((item, i) => {
+          this.readerForm.columns.push({
+            index: i.toString(),
+            type: 'string',
+            value: item
+          })
+        })
       })
     },
 
     getFileList() {
-      axios.get('http://localhost:8080/api/getFileList', {
-        params:
-          {
-            folderPath: this.folderPath
-          }
-      }).then(res => {
+      jdbcDatasource.getFileList({folderPath: this.folderPath}).then(res => {
         this.fileList = []
-        this.fileList = res.data.data
-        console.log(res.data.data)
+        this.fileList = res
+        console.log(res)
       })
     },
     getPath() {

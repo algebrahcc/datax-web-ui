@@ -355,15 +355,9 @@ export default {
         // 包括文件路径，保持文件夹结构
         formData.append('files', file, file.webkitRelativePath)
       }
-
-      // 发送请求到后端
-      axios.post('http://localhost:8080/api/uploadDir', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }).then(res => {
-        console.log(res.data.data)
-        this.$set(this.temp, 'fileAddress', res.data.data)
+      datasourceApi.uploadDir(formData).then(res => {
+        console.log(res)
+        this.$set(this.temp, 'fileAddress', res)
       })
     },
 

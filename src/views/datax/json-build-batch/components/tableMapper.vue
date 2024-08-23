@@ -2,10 +2,6 @@
   <div class="app-container">
     <el-form label-position="left" label-width="80px" :model="readerForm">
       <el-form-item label="源端表">
-<!--        <span v-for="item in fromTablesList">-->
-<!--          {{item}}-->
-<!--        </span>-->
-
         <el-checkbox
           v-model="readerForm.lcheckAll"
           :indeterminate="readerForm.isIndeterminate"
@@ -17,22 +13,6 @@
         </el-checkbox-group>
       </el-form-item>
       <el-divider></el-divider>
-      <template v-for="(item,index) in fromTablesList">
-        <el-form-item label="表名">
-          {{item}}
-        </el-form-item>
-<!--        <template v-for="(item,i) in this.readerForm.columnsList[index]">-->
-          <el-form-item v-for="(columnItem, columnIndex) in readerForm.columnsList[index]" :label="columnItem.value" style="">
-            <el-autocomplete
-              v-model="item.type"
-              placeholder="请输入或选择数据类型"
-              :fetch-suggestions="querySearch"
-            >
-            </el-autocomplete>
-          </el-form-item>
-<!--        </template>-->
-        <el-divider></el-divider>
-      </template>
       <el-form-item label="目标表">
         <el-checkbox
           v-model="readerForm.rcheckAll"
@@ -49,7 +29,6 @@
 </template>
 
 <script>
-import axios from "axios";
 
 export default {
   name: 'TableMapper',
@@ -69,9 +48,6 @@ export default {
         isIndeterminate: true
       }
     }
-  },
-  created() {
-    this.getCsvHeaders()
   },
   methods: {
     lHandleCheckAllChange(val) {
