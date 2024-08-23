@@ -296,6 +296,7 @@ export default {
       this.temp = Object.assign({}, val)
       this.temp.id = undefined
       //this.temp.jobDesc = this.getReaderData().path
+      this.temp.jobDesc = this.getReaderData().tableName
       this.$refs.jobTemplateSelectDrawer.closeDrawer()
       this.jobTemplate = val.id + '(' + val.jobDesc + ')'
     }

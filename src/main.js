@@ -4,6 +4,9 @@ import Cookies from 'js-cookie'
 
 import 'normalize.css/normalize.css' // a modern alternative to CSS resets
 
+import iView from 'iview';
+import 'iview/dist/styles/iview.css';
+
 import Element from 'element-ui'
 import './styles/element-variables.scss'
 
@@ -41,6 +44,8 @@ Vue.use(Element, {
 Object.keys(filters).forEach(key => {
   Vue.filter(key, filters[key])
 })
+
+Vue.use(iView);
 
 Vue.config.productionTip = false
 
