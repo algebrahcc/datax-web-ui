@@ -1,16 +1,3 @@
-<style scoped>
-.typeInput {
-  font-size: 14px;
-  padding-left: 15px;
-  padding-right: 15px;
-  border-color: #C0C4CC;
-  border-radius: 4px;
-  line-height: 36px;
-  border-width: 1.25px;
-}
-
-</style>
-
 <template>
   <div class="app-container">
     <el-form label-position="right" label-width="120px" :model="readerForm" :rules="rules">
@@ -38,7 +25,7 @@
       <el-form-item v-show="dataSource==='txtfile'" label="文件夹地址：">
         <span>{{ getPath() }}</span>
       </el-form-item>
-      <el-form-item v-show="fileList" label="文件名称：">
+      <el-form-item v-show="dataSource==='txtfile'&&fileList" label="文件名称：">
         <el-checkbox
           v-model="readerForm.checkAll"
           :indeterminate="readerForm.isIndeterminate"
@@ -50,8 +37,9 @@
           <el-checkbox v-for="c in fileList" :key="c" :label="c">{{ c }}</el-checkbox>
         </el-checkbox-group>
       </el-form-item>
-      <el-form-item v-show="readerForm.tables" label="字段数据类型">
-        <el-form-item v-for="(item,index) in csvHeaders" :key="index">
+
+      <el-form-item v-show="dataSource==='txtfile'&&readerForm.tables" label="字段数据类型">
+        <el-form-item v-for="(item,index) in csvHeaders" :key="index" style="display: flex">
           <span>{{ readerForm.tables[index] }}</span>
           <el-form-item v-for="(el,i) in csvHeaders[index]" :label="el" :key="i" style="margin-bottom: 5px;">
             <AutoComplete v-model="readerForm.columnsList[index][i].type"
@@ -63,8 +51,9 @@
           <el-divider></el-divider>
         </el-form-item>
       </el-form-item>
-      <el-form-item v-show="dataSource==='postgresql' || dataSource==='oracle' ||dataSource==='sqlserver'"
-                    label="数据库表名：">
+      <el-form-item
+        v-show="dataSource==='postgresql' || dataSource==='oracle' ||dataSource==='sqlserver'||dataSource==='mysql'"
+        label="数据库表名：">
         <el-checkbox
           v-model="readerForm.checkAll"
           :indeterminate="readerForm.isIndeterminate"
@@ -85,6 +74,7 @@ import * as dsQueryApi from '@/api/metadata-query'
 import {list as jdbcDsList} from '@/api/datax-jdbcDatasource'
 import Bus from '../busReader'
 import axios from "axios";
+import * as jdbcDatasourceApi from "@/api/datax-jdbcDatasource";
 
 export default {
   name: 'TableReader',
@@ -128,7 +118,7 @@ export default {
     }
   },
   watch: {
-    'readerForm.datasourceId': function (oldVal, newVal) {
+    'readerForm.datasourceId': function () {
       if (this.dataSource === 'postgresql' || this.dataSource === 'oracle' || this.dataSource === 'sqlserver') {
         this.getSchema()
       } else {
@@ -136,52 +126,41 @@ export default {
       }
     },
     'folderPath': function () {
-      this.getFileList()
+      if (this.dataSource === 'txtfile') {
+        this.getFileList()
+      }
     },
     'readerForm.tables': function () {
-      this.getCsvHeaders()
+      if (this.dataSource === 'txtfile') {
+        this.getCsvHeaders()
+      }
     },
   },
   created() {
     this.getJdbcDs()
   },
   methods: {
+
     filterMethod(value, option) {
       return option.toUpperCase().indexOf(value.toUpperCase()) !== -1;
-    },
-
-    handleTypeChange(index, i) {
-      this.readerForm.columnsList[index][i].type = this.type[index][i]
-      console.log(this.readerForm.columnsList)
     },
 
     getCsvHeaders() {
       this.csvHeaders = []
       this.readerForm.tables.forEach((item, index) => {
-        axios.post('http://localhost:8080/api/getCsvHeader', {
-          path: item
-        })
+        jdbcDatasourceApi.getCsvHeader({path: item})
           .then(res => {
-            if (res.data.code === 0) {
-              //
-              this.csvHeaders.push(res.data.data)
-              // 表格源文件变化时，列名清空
-              this.readerForm.columnsList[index] = []
-              this.csvHeaders[index].forEach((item, i) => {
-                this.$set(this.readerForm.columnsList[index], i, {
-                  index: i.toString(),
-                  type: '',
-                  value: item
-                })
+            this.csvHeaders.push(res)
+            // 表格源文件变化时，列名清空
+            this.readerForm.columnsList[index] = []
+            this.csvHeaders[index].forEach((item, i) => {
+              this.$set(this.readerForm.columnsList[index], i, {
+                index: i.toString(),
+                type: 'string',
+                value: item
               })
-            } else {
-              this.$notify({
-                title: 'Error',
-                message: '文件处理失败: ' + res.data.message,
-                type: 'error',
-                duration: 2000
-              });
-            }
+            })
+
           })
       })
       console.log(this.readerForm.columnsList)
@@ -209,18 +188,13 @@ export default {
       })
     },
     getFileList() {
-      axios.get('http://localhost:8080/api/getFileList', {
-        params:
-          {
-            folderPath: this.folderPath
-          }
-      }).then(res => {
+      jdbcDatasourceApi.getFileList({folderPath: this.folderPath}).then(res => {
         this.fileList = []
-        this.fileList = res.data.data
+        this.fileList = res
         for (let i = 0; i < this.fileList.length; i++) {
           this.fileList[i] = this.folderPath + '\\' + this.fileList[i]
         }
-        console.log(res.data.data)
+        console.log(res)
       })
     },
     getPath() {
@@ -300,9 +274,6 @@ export default {
         this.readerForm.datasourceId = Bus.dataSourceId
       }
       return this.readerForm
-    },
-    getColumnsList() {
-      return this.readerForm.columnsList
     }
   }
 }

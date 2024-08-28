@@ -166,7 +166,8 @@
           <!--          </el-upload>-->
         </el-form-item>
         <el-form-item v-if="txtfile" label="文件夹地址">
-          <el-input ref="fileAddress" :disabled="true" style="width: 600px;" :value="this.temp.fileAddress" />
+          <el-input ref="fileAddress" :disabled="true" style="width: 600px;" :value="this.temp.fileAddress">
+          </el-input>
         </el-form-item>
         <el-form-item v-if="excel" label="测试" prop="fileUpload">
           <el-input v-model="temp.filesDir" placeholder="上传目录" style="width: 40%" />
@@ -354,29 +355,11 @@ export default {
         // 包括文件路径，保持文件夹结构
         formData.append('files', file, file.webkitRelativePath)
       }
-
-      // 发送请求到后端
-      axios.post('http://localhost:8080/api/uploadDir', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }).then(res => {
-        console.log(res.data.data)
-        this.$set(this.temp, 'fileAddress', res.data.data)
+      datasourceApi.uploadDir(formData).then(res => {
+        console.log(res)
+        this.$set(this.temp, 'fileAddress', res)
       })
     },
-    // handleUploadSuccess(response) {
-    //   if (response.code === 0) {
-    //     this.temp.fileAddress = response.data;
-    //     this.$set(this.temp,'fileAddress',response.data)
-    //     this.$refs.fileAddress.value = this.temp.fileAddress
-    //   } else {
-    //     this.$message.error('文件上传失败');
-    //   }
-    // },
-    // handleUploadError() {
-    //   this.$message.error('文件上传失败');
-    // },
 
     selectDataSource(datasource) {
       this.excel = false

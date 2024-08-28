@@ -61,8 +61,33 @@ export function uploadFile(data) {
   console.log(data)
   return request({
     url: '/api/jobJdbcDatasource/uploadFile',
-    headers: { 'Content-Type': 'multipart/form-data' },
+    headers: {'Content-Type': 'multipart/form-data'},
     method: 'post',
     data
+  })
+}
+
+export function uploadDir(data) {
+  return request({
+    url: '/api/uploadDir',
+    headers: {'Content-Type': 'multipart/form-data'},
+    method: 'post',
+    data
+  })
+}
+
+export function getCsvHeader(params) {
+  return request({
+    url: '/api/getCsvHeader',
+    methods: 'get',
+    params
+  })
+}
+
+export function getFileList(params) {
+  return request({
+    url: 'api/getFileList',
+    methods: 'get',
+    params
   })
 }

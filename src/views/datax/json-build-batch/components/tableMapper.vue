@@ -29,7 +29,6 @@
 </template>
 
 <script>
-import axios from "axios";
 
 export default {
   name: 'TableMapper',
@@ -47,101 +46,10 @@ export default {
         lcheckAll: false,
         rcheckAll: false,
         isIndeterminate: true
-      },
-      csvHeaders:[],
-      typeList:[
-        {
-          value:'long',
-        },
-        {
-          value:'double',
-        },
-        {
-          value: 'boolean',
-        },
-        {
-          value: 'string',
-        },
-        {
-          value: 'date',
-        }
-      ],
+      }
     }
   },
-  created() {
-    this.getCsvHeaders()
-  },
-  watch:{
-    'fromTableList':function (){
-      this.getCsvHeaders()
-    },
-    // 'readerForm.columnsList':function (){
-    //   for (let i = 0; i < this.readerForm.columnsList.length; i++) {
-    //     this.type.push([])
-    //     for (let j = 0; j < this.readerForm.columnsList[i].length; j++) {
-    //       this.type[i].push('')
-    //     }
-    //   }
-    // }
-  },
   methods: {
-
-    handleQueryChange(index,columnIndex){
-      this.readerForm.columnsList[index][columnIndex].type=this.type[index][columnIndex]
-      console.log(this.readerForm.columnsList)
-    },
-
-    querySearch(queryString,cb) {
-      const typeList = this.typeList;
-      const results = queryString ? typeList.filter(this.createFilter(queryString)) : typeList;
-      // 调用 callback 返回建议列表的数据
-      cb(results);
-    },
-
-    createFilter(queryString) {
-      return (typeList) => {
-        return (typeList.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
-      };
-    },
-
-    getCsvHeaders(){
-
-      this.fromTablesList.forEach((item,index)=>{
-        axios.post('http://localhost:8080/api/getCsvHeader', {
-          path: item
-        })
-          .then(res => {
-            if (res.data.code === 0) {
-              //
-              this.csvHeaders.push(res.data.data)
-              // 表格源文件变化时，列名清空
-              this.readerForm.columnsList[index]=[]
-              this.csvHeaders[index].forEach((item, i) => {
-                this.$set(this.readerForm.columnsList[index],i,{
-                  index: i.toString(),
-                  type: '',
-                  value: item
-                })
-              })
-            } else {
-              this.$notify({
-                title: 'Error',
-                message: '文件处理失败: ' + res.data.message,
-                type: 'error',
-                duration: 2000
-              });
-            }
-          })
-      })
-      console.log(this.readerForm.columnsList)
-      for (let i = 0; i < this.readerForm.columnsList.length; i++) {
-        this.type.push([])
-        for (let j = 0; j < this.readerForm.columnsList[i].length; j++) {
-          this.type[i].push('')
-        }
-      }
-    },
-
     lHandleCheckAllChange(val) {
       this.readerForm.ltables = val ? this.fromTablesList : []
       this.readerForm.isIndeterminate = false

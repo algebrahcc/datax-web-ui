@@ -12,7 +12,6 @@
         </el-select>
       </el-form-item>
       <el-form-item label="文件夹路径" prop="path">
-        <!--        <el-input v-model="readerForm.path" placeholder="" style="width: 42%">{{ readerForm.path }}</el-input>-->
         {{ this.getPath() }}
       </el-form-item>
       <el-form-item label="选中表格">
@@ -27,41 +26,24 @@
       <!--      <el-form-item label="字段分隔符" prop="fieldDelimiter">-->
       <!--        <el-input v-model="readerForm.fieldDelimiter" placeholder="CSV字段分隔符" style="width: 150px"/>-->
       <!--      </el-form-item>-->
-      <template v-for="(item,i) in this.readerForm.columns">
-        <el-form-item :label="item.value" style="">
-          <el-autocomplete
-            v-model="item.type"
-            placeholder="请输入或选择数据类型"
-            :fetch-suggestions="querySearch"
-            @select="handleSelect(item)"
-          >
-          </el-autocomplete>
+      <template v-for="(item,i) in csvHeader">
+        <el-form-item :label="item">
+          <AutoComplete v-model="readerForm.columns[i].type"
+                        :data="['long','double','boolean','string','date']"
+                        :filter-method="filterMethod"
+                        style="width: 150px;">
+          </AutoComplete>
         </el-form-item>
       </template>
-<!--          <el-select v-model="item.type" placeholder="选择数据类型" style="width: 150px;">-->
-<!--            <el-option-->
-<!--              v-for="item in typeList"-->
-<!--              :key="item.value"-->
-<!--              :label="item.key"-->
-<!--              :value="item.label"-->
-<!--            />-->
-
-<!--          </el-select>-->
-
-      <el-form-item label="skipHeader">
-        <el-select v-model="readerForm.skipHeader" placeholder="是否跳过表头" style="width: 150px;">
-          <el-option v-for="item in skipHeaderTypes" :key="item.value" :label="item.label" :value="item.value"/>
-        </el-select>
-      </el-form-item>
     </el-form>
   </div>
 </template>
 
 <script>
-import * as dsQueryApi from '@/api/metadata-query'
 import {list as jdbcDsList} from '@/api/datax-jdbcDatasource'
 import Bus from '../busReader'
 import axios from "axios";
+import * as jdbcDatasource from "@/api/datax-jdbcDatasource";
 
 export default {
   name: 'TxtfileReader',
@@ -94,76 +76,23 @@ export default {
         isIndeterminate: true,
         fieldDelimiter: ',',
         path: '',
-        skipHeader: ''
+        skipHeader: 'true'
       },
       folderPath: '',
       selectedFile: '',
-      typeList:[
-        {
-          value:'long',
-          address:'整型'
-        },
-        {
-          value:'double',
-          address:'浮点型'
-        },
-        {
-          value: 'boolean',
-          address: '布尔值'
-        },
-        {
-          value: 'string',
-          address: '字符串'
-        },
-        {
-          value: 'date',
-          address: '日期'
-        }
-      ],
-      // typeList: [
-      //   {
-      //     value: 0,
-      //     label: 'long',
-      //     key: '整数'
-      //   },
-      //   {
-      //     value: 1,
-      //     label: 'double',
-      //     key: '浮点数'
-      //   },
-      //   {
-      //     value: 2,
-      //     label: 'boolean',
-      //     key: '布尔值'
-      //   },
-      //   {
-      //     value: 3,
-      //     label: 'string',
-      //     key: '字符串'
-      //   },
-      //   {
-      //     value: 4,
-      //     label: 'date',
-      //     key: '日期'
-      //   }
-      // ],
       rules: {
         datasourceId: [{required: true, message: '此项必填', trigger: 'change'}],
         path: [{required: true, message: '此项必填', trigger: 'change'}],
         fieldDelimiter: [{required: true, message: '此项必填', trigger: 'change'}],
         skipHeader: [{require: true, message: '此项必填', trigger: 'change'}]
       },
-      skipHeaderTypes: [
-        {value: 'true', label: '读取跳过表头'},
-        {value: 'false', label: '读取包含表头'}
-      ]
     }
   },
   watch: {
-    'folderPath': function (val) {
+    'folderPath': function () {
       this.getFileList()
     },
-    'fileList': function (val) {
+    'fileList': function () {
       this.fileListOptions = []
       for (let i = 0; i < this.fileList.length; i++) {
         this.fileListOptions.push({
@@ -179,68 +108,31 @@ export default {
   },
   methods: {
 
-    querySearch(queryString,cb) {
-      const typeList = this.typeList;
-      const results = queryString ? typeList.filter(this.createFilter(queryString)) : typeList;
-      // 调用 callback 返回建议列表的数据
-      cb(results);
+    filterMethod(value, option) {
+      return option.toUpperCase().indexOf(value.toUpperCase()) !== -1;
     },
 
-    createFilter(queryString) {
-      return (typeList) => {
-        return (typeList.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
-      };
-    },
-
-    handleSelect(item){
-      console.log(item)
-    },
     fileChange() {
-      axios.post('http://localhost:8080/api/getCsvHeader', {
-        path: this.readerForm.path
-      })
-        .then(res => {
-          if (res.data.code === 0) {
-            this.csvHeader = []
-            this.csvHeader = res.data.data
-            // 表格源文件变化时，列名清空
-            this.readerForm.columns = []
-            this.csvHeader.forEach((item, i) => {
-              this.readerForm.columns.push({
-                index: i.toString(),
-                type: '',
-                value: item
-              })
-            })
-          } else {
-            this.$notify({
-              title: 'Error',
-              message: '文件处理失败: ' + res.data.message,
-              type: 'error',
-              duration: 2000
-            });
-          }
-        }).catch(err => {
-        console.error(err)
-        this.$notify({
-          title: 'Error',
-          message: '文件处理失败',
-          type: 'error',
-          duration: 2000
-        });
+      jdbcDatasource.getCsvHeader({path: this.readerForm.path}).then(res => {
+        this.csvHeader = []
+        this.csvHeader = res
+        // 表格源文件变化时，列名清空
+        this.readerForm.columns = []
+        this.csvHeader.forEach((item, i) => {
+          this.readerForm.columns.push({
+            index: i.toString(),
+            type: 'string',
+            value: item
+          })
+        })
       })
     },
 
     getFileList() {
-      axios.get('http://localhost:8080/api/getFileList', {
-        params:
-          {
-            folderPath: this.folderPath
-          }
-      }).then(res => {
+      jdbcDatasource.getFileList({folderPath: this.folderPath}).then(res => {
         this.fileList = []
-        this.fileList = res.data.data
-        console.log(res.data.data)
+        this.fileList = res
+        console.log(res)
       })
     },
     getPath() {
