@@ -146,7 +146,7 @@ export default {
     getJdbcDs(type) {
       this.loading = true
       jdbcDsList(this.jdbcDsQuery).then(response => {
-        const {records} = response
+        const { records } = response
         this.rDsList = records
         this.loading = false
         console.log(this.rDsList)

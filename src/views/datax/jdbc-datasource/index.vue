@@ -420,7 +420,7 @@ export default {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           datasourceApi.created(this.temp).then(response => {
-            if (response) {
+            if (response && this.temp.datasource === 'excel') {
               this.uploadFiles()
             }
             this.fetchData()
@@ -472,7 +472,7 @@ export default {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
           datasourceApi.updated(tempData).then(response => {
-            if (response) {
+            if (response && tempData.datasource === 'excel') {
               this.uploadFiles()
             }
             this.fetchData()
